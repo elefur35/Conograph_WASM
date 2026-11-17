@@ -1,4 +1,4 @@
-name: Compiler Conograph en WebAssembly
+name: .github/workflows/compile_conograph_github.yml
 
 on:
   workflow_dispatch:

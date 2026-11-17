@@ -1,0 +1,48 @@
+name: .github/workflows/compile_conograph_github.yml
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  compiler-et-tester:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Recuperer les fichiers du depot
+        uses: actions/checkout@v4
+
+      - name: Decompresser le kit Conograph
+        shell: bash
+        run: |
+          test -f Conograph_WASM_Validation_Kit.zip
+          unzip -q Conograph_WASM_Validation_Kit.zip
+          test -f Conograph_WASM_Validation_Kit/build_wasm.sh
+
+      - name: Installer Emscripten SDK
+        shell: bash
+        run: |
+          git clone --depth 1 https://github.com/emscripten-core/emsdk.git /tmp/emsdk
+          /tmp/emsdk/emsdk install latest
+          /tmp/emsdk/emsdk activate latest
+
+      - name: Compiler et tester le rutile
+        shell: bash
+        run: |
+          set -o pipefail
+          source /tmp/emsdk/emsdk_env.sh
+          bash Conograph_WASM_Validation_Kit/build_wasm.sh 2>&1 | tee compilation.log
+
+      - name: Sauvegarder les resultats et les erreurs, meme en cas d'echec
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Conograph-resultats-compilation
+          if-no-files-found: warn
+          path: |
+            compilation.log
+            Conograph_WASM_Validation_Kit/dist/conograph.js
+            Conograph_WASM_Validation_Kit/dist/rutile_wasm_validation.json
+            Conograph_WASM_Validation_Kit/dist/rutile_wasm_output.index.xml
